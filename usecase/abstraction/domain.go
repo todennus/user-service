@@ -5,6 +5,6 @@ import (
 )
 
 type UserDomain interface {
-	Create(username, password string) (*domain.User, error)
+	New(username, password string) (*domain.User, error)
 	Validate(hashedPassword, password string) error
 }

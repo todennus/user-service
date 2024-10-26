@@ -38,7 +38,7 @@ func NewUserDomain(snowflake *snowflake.Node) (*UserDomain, error) {
 	return &UserDomain{Snowflake: snowflake}, nil
 }
 
-func (domain *UserDomain) Create(username, password string) (*User, error) {
+func (domain *UserDomain) New(username, password string) (*User, error) {
 	if err := domain.validateUsername(username); err != nil {
 		return nil, err
 	}

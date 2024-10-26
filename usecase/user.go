@@ -48,9 +48,9 @@ func (uc *UserUsecase) Register(
 		return nil, errordef.ErrServer.Hide(err, "failed-to-get-user")
 	}
 
-	user, err := uc.userDomain.Create(req.Username, req.Password)
+	user, err := uc.userDomain.New(req.Username, req.Password)
 	if err != nil {
-		return nil, errordef.Domain.Event(err, "failed-to-new-user").Enrich(errordef.ErrRequestInvalid).Error()
+		return nil, errordef.DomainWrapper.Event(err, "failed-to-new-user").Enrich(errordef.ErrRequestInvalid).Error()
 	}
 
 	shouldCreateUser, err := uc.createAdmin(ctx, user)
@@ -125,7 +125,7 @@ func (usecase *UserUsecase) ValidateCredentials(
 	}
 
 	if err := usecase.userDomain.Validate(user.HashedPass, req.Password); err != nil {
-		return nil, errordef.Domain.Event(err, "failed-to-validate-user-credentials").
+		return nil, errordef.DomainWrapper.Event(err, "failed-to-validate-user-credentials").
 			EnrichWith(errordef.ErrCredentialsInvalid, "invalid username or password").
 			Error()
 	}
