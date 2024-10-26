@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/todennus/shared/enumdef"
+	"github.com/todennus/shared/filterer"
 	"github.com/todennus/shared/scopedef"
 	"github.com/todennus/user-service/domain"
 	"github.com/todennus/x/enum"
@@ -25,7 +26,7 @@ func NewUser(ctx context.Context, user *domain.User) *User {
 		Role:        user.Role,
 	}
 
-	Set(ctx, &usecaseUser.Role, enum.Default[enumdef.UserRole]()).
+	filterer.Set(ctx, &usecaseUser.Role, enum.Default[enumdef.UserRole]()).
 		WhenRequestUserNot(user.ID).
 		WhenNotContainsScope(scopedef.Engine.New(scopedef.Actions.Read, scopedef.Resources.User.Role))
 

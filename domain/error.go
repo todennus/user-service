@@ -7,9 +7,8 @@ import (
 )
 
 var (
-	ErrUsernameInvalid    = fmt.Errorf("%w%s", errordef.ErrDomainKnown, "invalid username")
-	ErrDisplayNameInvalid = fmt.Errorf("%w%s", errordef.ErrDomainKnown, "invalid display name")
-	ErrPasswordInvalid    = fmt.Errorf("%w%s", errordef.ErrDomainKnown, "invalid password")
-
-	ErrMismatchedPassword = fmt.Errorf("%w%s", errordef.ErrDomainKnown, "mismatched password")
+	ErrUsernameInvalid    = fmt.Errorf("%winvalid username", errordef.ErrDomainKnown)
+	ErrDisplayNameInvalid = fmt.Errorf("%winvalid display name", errordef.ErrDomainKnown)
+	ErrPasswordInvalid    = fmt.Errorf("%winvalid password", errordef.ErrDomainKnown)
+	ErrMismatchedPassword = fmt.Errorf("%wmismatched password", errordef.ErrDomainKnown)
 )

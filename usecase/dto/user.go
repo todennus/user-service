@@ -8,7 +8,6 @@ import (
 	"github.com/xybor-x/snowflake"
 )
 
-// Register
 type UserRegisterRequest struct {
 	Username string
 	Password string
@@ -24,7 +23,6 @@ func NewUserRegisterResponse(ctx context.Context, user *domain.User) *UserRegist
 	}
 }
 
-// GetByID
 type UserGetByIDRequest struct {
 	UserID snowflake.ID
 }
@@ -39,7 +37,6 @@ func NewUserGetByIDResponse(ctx context.Context, user *domain.User) *UserGetByID
 	}
 }
 
-// GetByUsername
 type UserGetByUsernameRequest struct {
 	Username string
 }
@@ -54,7 +51,6 @@ func NewUserGetByUsernameResponse(ctx context.Context, user *domain.User) *UserG
 	}
 }
 
-// Validate
 type UserValidateCredentialsRequest struct {
 	Username string
 	Password string
