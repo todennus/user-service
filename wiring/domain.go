@@ -16,7 +16,7 @@ func InitializeDomains(ctx context.Context, config *config.Config) (*Domains, er
 	var err error
 	domains := &Domains{}
 
-	domains.UserDomain, err = domain.NewUserDomain(config.NewSnowflakeNode())
+	domains.UserDomain, err = domain.NewUserDomain(config.SnowflakeNode)
 	if err != nil {
 		return nil, err
 	}
