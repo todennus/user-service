@@ -126,7 +126,7 @@ func (a *UserRESTAdapter) GetByUsername() http.HandlerFunc {
 // @Param body body dto.UserValidateRequest true "Validation data"
 // @Success 200 {object} response.SwaggerSuccessResponse[dto.UserValidateResponse] "Validate successfully"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
-// @Failure 401 {object} response.SwaggerInvalidCredentialsErrorResponse "Invalid credentials"
+// @Failure 403 {object} response.SwaggerInvalidCredentialsErrorResponse "Invalid credentials"
 // @Router /users/validate [post]
 func (a *UserRESTAdapter) Validate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +141,7 @@ func (a *UserRESTAdapter) Validate() http.HandlerFunc {
 		resp, err := a.userUsecase.ValidateCredentials(ctx, req.To())
 		response.NewRESTResponseHandler(ctx, dto.NewUserValidateResponse(resp), err).
 			Map(http.StatusBadRequest, errordef.ErrRequestInvalid).
-			Map(http.StatusUnauthorized, errordef.ErrCredentialsInvalid).
+			Map(http.StatusForbidden, errordef.ErrCredentialsInvalid).
 			WriteHTTPResponse(ctx, w)
 	}
 }
