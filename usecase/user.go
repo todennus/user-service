@@ -75,7 +75,7 @@ func (usecase *UserUsecase) GetByID(
 		return nil, xerror.Enrich(errordef.ErrRequestInvalid, "require user id")
 	}
 
-	user, err := usecase.userRepo.GetByID(ctx, req.UserID.Int64())
+	user, err := usecase.userRepo.GetByID(ctx, req.UserID)
 	if err != nil {
 		if errors.Is(err, errordef.ErrNotFound) {
 			return nil, xerror.Enrich(errordef.ErrNotFound, "not found user with id %d", req.UserID)

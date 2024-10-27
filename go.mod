@@ -9,8 +9,8 @@ require (
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/todennus/migration v0.1.1
 	github.com/todennus/proto v0.1.1
-	github.com/todennus/shared v0.4.2
-	github.com/todennus/x v0.1.3
+	github.com/todennus/shared v0.5.0
+	github.com/todennus/x v0.2.0
 	github.com/xybor-x/snowflake v1.0.0
 	golang.org/x/crypto v0.28.0
 	google.golang.org/grpc v1.67.1

@@ -8,6 +8,7 @@ import (
 	"github.com/todennus/user-service/domain"
 	"github.com/todennus/user-service/infras/database/model"
 	"github.com/todennus/x/enum"
+	"github.com/xybor-x/snowflake"
 	"gorm.io/gorm"
 )
 
@@ -33,7 +34,7 @@ func (repo *UserRepository) GetByUsername(ctx context.Context, username string) 
 	return model.To()
 }
 
-func (repo *UserRepository) GetByID(ctx context.Context, userID int64) (*domain.User, error) {
+func (repo *UserRepository) GetByID(ctx context.Context, userID snowflake.ID) (*domain.User, error) {
 	model := model.UserModel{}
 	if err := repo.db.WithContext(ctx).Take(&model, "id=?", userID).Error; err != nil {
 		return nil, errordef.ConvertGormError(err)
