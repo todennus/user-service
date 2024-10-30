@@ -5,15 +5,16 @@ import (
 	pbresource "github.com/todennus/proto/gen/service/dto/resource"
 	ucdto "github.com/todennus/user-service/usecase/dto"
 	ucresource "github.com/todennus/user-service/usecase/dto/resource"
+	"github.com/todennus/x/conversion"
 	"github.com/xybor-x/snowflake"
 )
 
 func NewPbUser(user *ucresource.User) *pbresource.User {
 	return &pbresource.User{
 		Id:          user.ID.Int64(),
-		Username:    user.Username,
-		DisplayName: user.DisplayName,
-		Role:        user.Role.String(),
+		Username:    conversion.ConvertPointer(user.Username),
+		DisplayName: conversion.ConvertPointer(user.DisplayName),
+		Role:        conversion.ConvertPointer(user.Role).String(),
 	}
 }
 

@@ -6,11 +6,11 @@ import (
 
 	"github.com/todennus/shared/enumdef"
 	"github.com/todennus/shared/errordef"
-	"github.com/todennus/user-service/domain"
+	"github.com/todennus/shared/scopedef"
+	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/user-service/usecase/abstraction"
 	"github.com/todennus/user-service/usecase/dto"
 	"github.com/todennus/x/lock"
-	"github.com/todennus/x/xcontext"
 	"github.com/todennus/x/xerror"
 )
 
@@ -39,32 +39,62 @@ func (uc *UserUsecase) Register(
 	ctx context.Context,
 	req *dto.UserRegisterRequest,
 ) (*dto.UserRegisterResponse, error) {
-	_, err := uc.userRepo.GetByUsername(ctx, req.Username)
-	if err == nil {
-		return nil, xerror.Enrich(errordef.ErrDuplicated, "username %s has already existed", req.Username)
-	}
-
-	if !errors.Is(err, errordef.ErrNotFound) {
-		return nil, errordef.ErrServer.Hide(err, "failed-to-get-user")
+	if scopedef.Eval(xcontext.Scope(ctx)).RequireAdmin(scopedef.AdminCreateUser).IsUnsatisfied() {
+		return nil, xerror.Enrich(errordef.ErrForbidden, "insufficient scope")
 	}
 
 	user, err := uc.userDomain.New(req.Username, req.Password)
 	if err != nil {
-		return nil, errordef.DomainWrapper.Event(err, "failed-to-new-user").Enrich(errordef.ErrRequestInvalid).Error()
+		return nil, errordef.DomainWrapper.Event(err, "failed-to-new-user").
+			Enrich(errordef.ErrRequestInvalid).Error()
 	}
 
-	shouldCreateUser, err := uc.createAdmin(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-
-	if shouldCreateUser {
-		if err = uc.userRepo.Create(ctx, user); err != nil {
-			return nil, errordef.ErrServer.Hide(err, "failed-to-create-user")
+	if err = uc.userRepo.Create(ctx, user); err != nil {
+		if errors.Is(err, errordef.ErrDuplicated) {
+			return nil, xerror.Enrich(errordef.ErrDuplicated, "username %s has already existed", req.Username)
 		}
+
+		return nil, errordef.ErrServer.Hide(err, "failed-to-create-user")
 	}
 
-	return dto.NewUserRegisterResponse(ctx, user), nil
+	return dto.NewUserRegisterResponse(user), nil
+}
+
+func (uc *UserUsecase) RegisterFirst(
+	ctx context.Context,
+	req *dto.UserRegisterFirstRequest,
+) (*dto.UserRegisterFirstResponse, error) {
+	if !uc.shouldCreateAdmin {
+		return nil, xerror.Enrich(errordef.ErrNotFound, "this api is only openned for creating the first user")
+	}
+
+	if err := uc.adminLocker.Lock(ctx); err != nil {
+		return nil, errordef.ErrServer.Hide(err, "failed-to-lock-first-client-flow")
+	}
+	defer uc.adminLocker.Unlock(ctx)
+
+	count, err := uc.userRepo.CountByRole(ctx, enumdef.UserRoleAdmin)
+	if err != nil {
+		return nil, errordef.ErrServer.Hide(err, "failed-to-count-client")
+	}
+
+	if count > 0 {
+		uc.shouldCreateAdmin = false
+		return nil, xerror.Enrich(errordef.ErrNotFound, "this api is only openned for creating the first user")
+	}
+
+	user, err := uc.userDomain.NewFirst(req.Username, req.Password)
+	if err != nil {
+		return nil, errordef.DomainWrapper.Event(err, "failed-to-new-user").
+			Enrich(errordef.ErrRequestInvalid).Error()
+	}
+
+	if err = uc.userRepo.Create(ctx, user); err != nil {
+		return nil, errordef.ErrServer.Hide(err, "failed-to-create-first-user")
+	}
+
+	uc.shouldCreateAdmin = false
+	return dto.NewUserRegisterFirstResponse(user), nil
 }
 
 func (usecase *UserUsecase) GetByID(
@@ -111,6 +141,10 @@ func (usecase *UserUsecase) ValidateCredentials(
 	ctx context.Context,
 	req *dto.UserValidateCredentialsRequest,
 ) (*dto.UserValidateCredentialsResponse, error) {
+	if scopedef.Eval(xcontext.Scope(ctx)).RequireAdmin(scopedef.AdminValidateUser).IsUnsatisfied() {
+		return nil, xerror.Enrich(errordef.ErrForbidden, "insufficient scope")
+	}
+
 	if req.Username == "" {
 		return nil, xerror.Enrich(errordef.ErrRequestInvalid, "require username")
 	}
@@ -130,45 +164,6 @@ func (usecase *UserUsecase) ValidateCredentials(
 			Error()
 	}
 
-	ctx = xcontext.WithRequestUserID(ctx, user.ID)
+	ctx = xcontext.WithRequestSubjectID(ctx, user.ID)
 	return dto.NewUserValidateCredentialsResponse(user), nil
-}
-
-func (uc *UserUsecase) createAdmin(
-	ctx context.Context,
-	user *domain.User,
-) (bool, error) {
-	if !uc.shouldCreateAdmin {
-		return true, nil
-	}
-
-	shouldCreateUser := true
-	xcontext.Logger(ctx).Info("check-create-admin")
-
-	err := lock.Func(uc.adminLocker, ctx, func() error {
-		adminCount, err := uc.userRepo.CountByRole(ctx, enumdef.UserRoleAdmin)
-		if err != nil {
-			return errordef.ErrServer.Hide(err, "failed-to-count-by-admin-role")
-		}
-
-		if adminCount > 0 {
-			xcontext.Logger(ctx).Info("cancel-create-admin")
-			uc.shouldCreateAdmin = false
-			return nil
-		}
-
-		xcontext.Logger(ctx).Info("create-admin", "username", user.Username, "uid", user.ID)
-
-		user.Role = enumdef.UserRoleAdmin
-		err = uc.userRepo.Create(ctx, user)
-		if err != nil {
-			return errordef.ErrServer.Hide(err, "failed-to-create-admin-user")
-		}
-
-		shouldCreateUser = false
-		uc.shouldCreateAdmin = false
-		return nil
-	})
-
-	return shouldCreateUser, err
 }

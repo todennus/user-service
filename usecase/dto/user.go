@@ -17,8 +17,23 @@ type UserRegisterResponse struct {
 	User *resource.User
 }
 
-func NewUserRegisterResponse(ctx context.Context, user *domain.User) *UserRegisterResponse {
+func NewUserRegisterResponse(user *domain.User) *UserRegisterResponse {
 	return &UserRegisterResponse{
+		User: resource.NewUserWithoutFilter(user),
+	}
+}
+
+type UserRegisterFirstRequest struct {
+	Username string
+	Password string
+}
+
+type UserRegisterFirstResponse struct {
+	User *resource.User
+}
+
+func NewUserRegisterFirstResponse(user *domain.User) *UserRegisterFirstResponse {
+	return &UserRegisterFirstResponse{
 		User: resource.NewUserWithoutFilter(user),
 	}
 }
@@ -33,7 +48,7 @@ type UserGetByIDResponse struct {
 
 func NewUserGetByIDResponse(ctx context.Context, user *domain.User) *UserGetByIDResponse {
 	return &UserGetByIDResponse{
-		User: resource.NewUser(ctx, user),
+		User: resource.NewUserWithFilter(ctx, user),
 	}
 }
 
@@ -47,7 +62,7 @@ type UserGetByUsernameResponse struct {
 
 func NewUserGetByUsernameResponse(ctx context.Context, user *domain.User) *UserGetByUsernameResponse {
 	return &UserGetByUsernameResponse{
-		User: resource.NewUser(ctx, user),
+		User: resource.NewUserWithFilter(ctx, user),
 	}
 }
 

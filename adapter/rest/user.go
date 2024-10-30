@@ -7,9 +7,9 @@ import (
 	"github.com/todennus/shared/errordef"
 	"github.com/todennus/shared/middleware"
 	"github.com/todennus/shared/response"
+	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/user-service/adapter/abstraction"
 	"github.com/todennus/user-service/adapter/rest/dto"
-	"github.com/todennus/x/xcontext"
 	"github.com/todennus/x/xhttp"
 )
 
@@ -22,21 +22,24 @@ func NewUserAdapter(userUsecase abstraction.UserUsecase) *UserRESTAdapter {
 }
 
 func (a *UserRESTAdapter) Router(r chi.Router) {
-	r.Post("/", a.Register())
-	r.Post("/validate", a.Validate())
+	r.Post("/", middleware.RequireAuthentication(a.Register()))
+	r.Post("/validate", middleware.RequireAuthentication(a.Validate()))
 
 	r.Get("/{user_id}", middleware.RequireAuthentication(a.GetByID()))
 	r.Get("/username/{username}", middleware.RequireAuthentication(a.GetByUsername()))
 }
 
 // @Summary Register a new user
-// @Description Register a new user by providing username and password
+// @Description Register a new user by providing username and password. <br>
+// @Description Require `todennus/admin:create:user` scope.
 // @Tags User
+// @Security OAuth2Application[todennus/admin:create:user]
 // @Accept json
 // @Produce json
 // @Param user body dto.UserRegisterRequest true "User registration data"
 // @Success 201 {object} response.SwaggerSuccessResponse[dto.UserRegisterResponse] "User registered successfully"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
+// @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
 // @Failure 409 {object} response.SwaggerDuplicatedErrorResponse "Duplicated"
 // @Router /users [post]
 func (a *UserRESTAdapter) Register() func(w http.ResponseWriter, r *http.Request) {
@@ -51,15 +54,16 @@ func (a *UserRESTAdapter) Register() func(w http.ResponseWriter, r *http.Request
 
 		user, err := a.userUsecase.Register(ctx, request.To())
 		response.NewRESTResponseHandler(ctx, dto.NewUserRegisterResponse(user), err).
-			WithDefaultCode(http.StatusCreated).
-			Map(http.StatusConflict, errordef.ErrDuplicated).
 			Map(http.StatusBadRequest, errordef.ErrRequestInvalid).
+			Map(http.StatusForbidden, errordef.ErrForbidden).
+			Map(http.StatusConflict, errordef.ErrDuplicated).
+			WithDefaultCode(http.StatusCreated).
 			WriteHTTPResponse(ctx, w)
 	}
 }
 
 // @Summary Get user by id
-// @Description Get an user information by user id. <br>
+// @Description Get an user information by user id.
 // @Tags User
 // @Produce json
 // @Param id path string true "User ID"
@@ -77,7 +81,7 @@ func (a *UserRESTAdapter) GetByID() http.HandlerFunc {
 			return
 		}
 
-		ucReq, err := req.To(xcontext.RequestUserID(ctx))
+		ucReq, err := req.To(xcontext.RequestSubjectID(ctx))
 		if err != nil {
 			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
 			return
@@ -119,14 +123,16 @@ func (a *UserRESTAdapter) GetByUsername() http.HandlerFunc {
 }
 
 // @Summary Validate user credentials
-// @Description Validate the user credentials and returns the user information.
+// @Description Validate the user credentials and returns the user information. <br>
+// @Description Require `todennus/admin:validate:user` scope.
 // @Tags User
+// @Security OAuth2Application[todennus/admin:validate:user]
 // @Accept json
 // @Produce json
 // @Param body body dto.UserValidateRequest true "Validation data"
 // @Success 200 {object} response.SwaggerSuccessResponse[dto.UserValidateResponse] "Validate successfully"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
-// @Failure 403 {object} response.SwaggerInvalidCredentialsErrorResponse "Invalid credentials"
+// @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
 // @Router /users/validate [post]
 func (a *UserRESTAdapter) Validate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -140,8 +146,8 @@ func (a *UserRESTAdapter) Validate() http.HandlerFunc {
 
 		resp, err := a.userUsecase.ValidateCredentials(ctx, req.To())
 		response.NewRESTResponseHandler(ctx, dto.NewUserValidateResponse(resp), err).
-			Map(http.StatusBadRequest, errordef.ErrRequestInvalid).
-			Map(http.StatusForbidden, errordef.ErrCredentialsInvalid).
+			Map(http.StatusBadRequest, errordef.ErrRequestInvalid, errordef.ErrCredentialsInvalid).
+			Map(http.StatusForbidden, errordef.ErrForbidden).
 			WriteHTTPResponse(ctx, w)
 	}
 }

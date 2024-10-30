@@ -43,6 +43,33 @@ func NewUserRegisterResponse(resp *dto.UserRegisterResponse) *UserRegisterRespon
 	}
 }
 
+// Register First
+type UserRegisterFirstRequest struct {
+	Username string `json:"username" example:"huykingsofm"`
+	Password string `json:"password" example:"s3Cr3tP@ssW0rD"`
+}
+
+func (req UserRegisterFirstRequest) To() *dto.UserRegisterFirstRequest {
+	return &dto.UserRegisterFirstRequest{
+		Username: req.Username,
+		Password: req.Password,
+	}
+}
+
+type UserRegisterFirstResponse struct {
+	*resource.User
+}
+
+func NewUserRegisterFirstResponse(resp *dto.UserRegisterFirstResponse) *UserRegisterFirstResponse {
+	if resp == nil {
+		return nil
+	}
+
+	return &UserRegisterFirstResponse{
+		User: resource.NewUser(resp.User),
+	}
+}
+
 // GetByID
 type UserGetByIDRequest struct {
 	UserID string `param:"user_id"`

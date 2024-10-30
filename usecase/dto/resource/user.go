@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/todennus/shared/enumdef"
-	"github.com/todennus/shared/filterer"
 	"github.com/todennus/shared/scopedef"
+	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/user-service/domain"
 	"github.com/todennus/x/enum"
 	"github.com/xybor-x/snowflake"
@@ -13,22 +13,22 @@ import (
 
 type User struct {
 	ID          snowflake.ID
-	Username    string
-	DisplayName string
-	Role        enum.Enum[enumdef.UserRole]
+	Username    *string
+	DisplayName *string
+	Role        *enum.Enum[enumdef.UserRole]
 }
 
-func NewUser(ctx context.Context, user *domain.User) *User {
-	usecaseUser := &User{
-		ID:          user.ID,
-		Username:    user.Username,
-		DisplayName: user.DisplayName,
-		Role:        user.Role,
-	}
+func NewUserWithFilter(ctx context.Context, user *domain.User) *User {
+	usecaseUser := NewUserWithoutFilter(user)
 
-	filterer.Set(ctx, &usecaseUser.Role, enum.Default[enumdef.UserRole]()).
-		WhenRequestUserNot(user.ID).
-		WhenNotContainsScope(scopedef.Engine.New(scopedef.Actions.Read, scopedef.Resources.User.Role))
+	scopedef.Eval(xcontext.Scope(ctx)).
+		RequireAdmin(scopedef.AdminReadUserProfile).
+		RequireUser(ctx, scopedef.UserReadUserProfile, usecaseUser.ID).
+		FilterIfUnsatisfied(&usecaseUser.Username, &usecaseUser.DisplayName)
+
+	scopedef.Eval(xcontext.Scope(ctx)).
+		RequireAdmin(scopedef.AdminReadUserProfile).
+		FilterIfUnsatisfied(&usecaseUser.Role)
 
 	return usecaseUser
 }
@@ -36,9 +36,9 @@ func NewUser(ctx context.Context, user *domain.User) *User {
 func NewUserWithoutFilter(user *domain.User) *User {
 	usecaseUser := &User{
 		ID:          user.ID,
-		Username:    user.Username,
-		DisplayName: user.DisplayName,
-		Role:        user.Role,
+		Username:    &user.Username,
+		DisplayName: &user.DisplayName,
+		Role:        &user.Role,
 	}
 
 	return usecaseUser
