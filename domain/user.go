@@ -61,6 +61,16 @@ func (domain *UserDomain) New(username, password string) (*User, error) {
 	}, nil
 }
 
+func (domain *UserDomain) NewFirst(username, password string) (*User, error) {
+	user, err := domain.New(username, password)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Role = enumdef.UserRoleAdmin
+	return user, nil
+}
+
 func (domain *UserDomain) Validate(hashedPassword, password string) error {
 	return ValidatePassword(hashedPassword, password)
 }

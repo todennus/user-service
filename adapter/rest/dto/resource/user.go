@@ -2,13 +2,14 @@ package resource
 
 import (
 	"github.com/todennus/user-service/usecase/dto/resource"
+	"github.com/todennus/x/conversion"
 )
 
 type User struct {
-	ID          string `json:"id,omitempty" example:"330559330522759168"`
-	Username    string `json:"username,omitempty" example:"huykingsofm"`
-	DisplayName string `json:"display_name,omitempty" example:"Huy Le Ngoc"`
-	Role        string `json:"role,omitempty" example:"admin"`
+	ID          string  `json:"id,omitempty" example:"330559330522759168"`
+	Username    *string `json:"username,omitempty" example:"huykingsofm"`
+	DisplayName *string `json:"display_name,omitempty" example:"Huy Le Ngoc"`
+	Role        *string `json:"role,omitempty" example:"admin"`
 }
 
 func NewUser(user *resource.User) *User {
@@ -16,6 +17,6 @@ func NewUser(user *resource.User) *User {
 		ID:          user.ID.String(),
 		Username:    user.Username,
 		DisplayName: user.DisplayName,
-		Role:        user.Role.String(),
+		Role:        conversion.MakeEnumPointerString(user.Role),
 	}
 }
