@@ -16,6 +16,7 @@ type User struct {
 	Username    *string
 	DisplayName *string
 	Role        *enum.Enum[enumdef.UserRole]
+	AvatarURL   *string
 }
 
 func NewUserWithFilter(ctx context.Context, user *domain.User) *User {
@@ -23,12 +24,17 @@ func NewUserWithFilter(ctx context.Context, user *domain.User) *User {
 
 	scopedef.Eval(xcontext.Scope(ctx)).
 		RequireAdmin(scopedef.AdminReadUserProfile).
-		RequireUser(ctx, scopedef.UserReadUserProfile, usecaseUser.ID).
+		RequireUser(ctx, scopedef.UserReadUserProfile, user.ID).
 		FilterIfUnsatisfied(&usecaseUser.Username, &usecaseUser.DisplayName)
 
 	scopedef.Eval(xcontext.Scope(ctx)).
 		RequireAdmin(scopedef.AdminReadUserProfile).
 		FilterIfUnsatisfied(&usecaseUser.Role)
+
+	scopedef.Eval(xcontext.Scope(ctx)).
+		RequireAdmin(scopedef.AdminReadUserProfile).
+		RequireUser(ctx, scopedef.UserReadUserAvatar, user.ID).
+		FilterIfUnsatisfied(&usecaseUser.AvatarURL)
 
 	return usecaseUser
 }
@@ -39,6 +45,7 @@ func NewUserWithoutFilter(user *domain.User) *User {
 		Username:    &user.Username,
 		DisplayName: &user.DisplayName,
 		Role:        &user.Role,
+		AvatarURL:   &user.AvatarURL,
 	}
 
 	return usecaseUser

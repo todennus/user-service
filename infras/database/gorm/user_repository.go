@@ -43,6 +43,14 @@ func (repo *UserRepository) GetByID(ctx context.Context, userID snowflake.ID) (*
 	return model.To()
 }
 
+func (repo *UserRepository) UpdateAvatarByID(ctx context.Context, userID snowflake.ID, avatarURL string) error {
+	return errordef.ConvertGormError(
+		repo.db.WithContext(ctx).Model(&model.UserModel{}).
+			Where("id=?", userID).
+			Update("avatar_url", avatarURL).Error,
+	)
+}
+
 func (repo *UserRepository) CountByRole(ctx context.Context, role enum.Enum[enumdef.UserRole]) (int64, error) {
 	var n int64
 	err := repo.db.WithContext(ctx).Model(&model.UserModel{}).Where("role=?", role.String()).Count(&n).Error

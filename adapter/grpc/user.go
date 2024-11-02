@@ -18,11 +18,12 @@ var _ service.UserServer = (*UserServer)(nil)
 type UserServer struct {
 	service.UnimplementedUserServer
 
-	userUsecase abstraction.UserUsecase
+	avatarUsecase abstraction.AvatarUsecase
+	userUsecase   abstraction.UserUsecase
 }
 
-func NewUserServer(userUsecase abstraction.UserUsecase) *UserServer {
-	return &UserServer{userUsecase: userUsecase}
+func NewUserServer(avatarUsecase abstraction.AvatarUsecase, userUsecase abstraction.UserUsecase) *UserServer {
+	return &UserServer{avatarUsecase: avatarUsecase, userUsecase: userUsecase}
 }
 
 func (s *UserServer) GetByID(ctx context.Context, req *pbdto.UserGetByIDRequest) (*pbdto.UserGetByIDResponse, error) {
@@ -35,7 +36,8 @@ func (s *UserServer) GetByID(ctx context.Context, req *pbdto.UserGetByIDRequest)
 
 	return response.NewGRPCResponseHandler(ctx, conversion.NewPbUserGetByIDResponse(resp), err).
 		Map(codes.InvalidArgument, errordef.ErrRequestInvalid).
-		Map(codes.NotFound, errordef.ErrNotFound).Finalize(ctx)
+		Map(codes.NotFound, errordef.ErrNotFound).
+		Finalize(ctx)
 }
 
 func (s *UserServer) Validate(ctx context.Context, req *pbdto.UserValidateRequest) (*pbdto.UserValidateResponse, error) {
@@ -49,5 +51,22 @@ func (s *UserServer) Validate(ctx context.Context, req *pbdto.UserValidateReques
 	return response.NewGRPCResponseHandler(ctx, conversion.NewPbUserValidateResponse(resp), err).
 		Map(codes.InvalidArgument, errordef.ErrRequestInvalid).
 		Map(codes.PermissionDenied, errordef.ErrCredentialsInvalid, errordef.ErrForbidden).
-		Map(codes.NotFound, errordef.ErrNotFound).Finalize(ctx)
+		Map(codes.NotFound, errordef.ErrNotFound).
+		Finalize(ctx)
+}
+
+func (s *UserServer) ValidateAvatarPolicyToken(
+	ctx context.Context,
+	req *pbdto.UserValidateAvatarPolicyTokenRequest,
+) (*pbdto.UserValidateAvatarPolicyTokenResponse, error) {
+	if err := interceptor.RequireAuthentication(ctx); err != nil {
+		return nil, err
+	}
+
+	ucreq := conversion.NewUsecaseAvatarValidatePolicyTokenRequest(req)
+	resp, err := s.avatarUsecase.ValidatePolicyToken(ctx, ucreq)
+
+	return response.NewGRPCResponseHandler(ctx, conversion.NewPbUserValidateAvatarPolicyTokenResponse(resp), err).
+		Map(codes.PermissionDenied, errordef.ErrForbidden).
+		Finalize(ctx)
 }

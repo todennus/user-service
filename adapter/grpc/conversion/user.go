@@ -20,8 +20,8 @@ func NewPbUser(user *ucresource.User) *pbresource.User {
 
 func NewUsecaseUserValidateRequest(req *pbdto.UserValidateRequest) *ucdto.UserValidateCredentialsRequest {
 	return &ucdto.UserValidateCredentialsRequest{
-		Username: req.Username,
-		Password: req.Password,
+		Username: req.GetUsername(),
+		Password: req.GetPassword(),
 	}
 }
 
@@ -37,7 +37,7 @@ func NewPbUserValidateResponse(resp *ucdto.UserValidateCredentialsResponse) *pbd
 
 func NewUsecaseUserGetByIDRequest(req *pbdto.UserGetByIDRequest) *ucdto.UserGetByIDRequest {
 	return &ucdto.UserGetByIDRequest{
-		UserID: snowflake.ID(req.Id),
+		UserID: snowflake.ID(req.GetId()),
 	}
 }
 
@@ -48,5 +48,27 @@ func NewPbUserGetByIDResponse(resp *ucdto.UserGetByIDResponse) *pbdto.UserGetByI
 
 	return &pbdto.UserGetByIDResponse{
 		User: NewPbUser(resp.User),
+	}
+}
+
+func NewUsecaseAvatarValidatePolicyTokenRequest(
+	req *pbdto.UserValidateAvatarPolicyTokenRequest,
+) *ucdto.AvatarValidatePolicyTokenRequest {
+	return &ucdto.AvatarValidatePolicyTokenRequest{
+		PolicyToken: req.GetPolicyToken(),
+	}
+}
+
+func NewPbUserValidateAvatarPolicyTokenResponse(
+	resp *ucdto.AvatarValidatePolicyTokenResponse,
+) *pbdto.UserValidateAvatarPolicyTokenResponse {
+	if resp == nil {
+		return nil
+	}
+
+	return &pbdto.UserValidateAvatarPolicyTokenResponse{
+		UserId:       resp.UserID.Int64(),
+		AllowedTypes: resp.AllowedTypes,
+		MaxSize:      int32(resp.MaxSize),
 	}
 }
