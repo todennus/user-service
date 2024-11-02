@@ -27,6 +27,7 @@ type User struct {
 	Username    string
 	HashedPass  string
 	Role        enum.Enum[enumdef.UserRole]
+	AvatarURL   string
 	UpdatedAt   time.Time
 }
 

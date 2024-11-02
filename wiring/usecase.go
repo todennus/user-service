@@ -11,6 +11,7 @@ import (
 
 type Usecases struct {
 	abstraction.UserUsecase
+	abstraction.AvatarUsecase
 }
 
 func InitializeUsecases(
@@ -25,6 +26,13 @@ func InitializeUsecases(
 		lock.NewRedisLock(infras.Redis, "user-lock", 10*time.Second),
 		repositories.UserRepository,
 		domains.UserDomain,
+	)
+
+	uc.AvatarUsecase = usecase.NewAvatarUsecase(
+		domains.AvatarDomain,
+		repositories.AvatarPolicySessionRepository,
+		repositories.FileRepository,
+		repositories.UserRepository,
 	)
 
 	return uc, nil

@@ -15,6 +15,7 @@ type UserModel struct {
 	Username    string    `gorm:"username"`
 	HashedPass  string    `gorm:"hashed_pass"`
 	Role        string    `gorm:"role"`
+	AvatarURL   string    `gorm:"avatar_url"`
 	UpdatedAt   time.Time `gorm:"updated_at"`
 }
 
@@ -28,8 +29,9 @@ func NewUser(d *domain.User) *UserModel {
 		DisplayName: d.DisplayName,
 		Username:    d.Username,
 		HashedPass:  d.HashedPass,
-		UpdatedAt:   d.UpdatedAt,
+		AvatarURL:   d.AvatarURL,
 		Role:        d.Role.String(),
+		UpdatedAt:   d.UpdatedAt,
 	}
 }
 
@@ -40,6 +42,7 @@ func (u UserModel) To() (*domain.User, error) {
 		Username:    u.Username,
 		HashedPass:  u.HashedPass,
 		Role:        enum.FromStr[enumdef.UserRole](u.Role),
+		AvatarURL:   u.AvatarURL,
 		UpdatedAt:   u.UpdatedAt,
 	}, nil
 }

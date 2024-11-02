@@ -20,7 +20,7 @@ func App(config *config.Config, usecases *wiring.Usecases) *grpc.Server {
 		),
 	)
 
-	service.RegisterUserServer(s, NewUserServer(usecases.UserUsecase))
+	service.RegisterUserServer(s, NewUserServer(usecases.AvatarUsecase, usecases.UserUsecase))
 
 	return s
 }

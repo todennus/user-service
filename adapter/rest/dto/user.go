@@ -150,3 +150,47 @@ func NewUserValidateResponse(resp *dto.UserValidateCredentialsResponse) *UserVal
 		User: resource.NewUser(resp.User),
 	}
 }
+
+type AvatarGetPolicyTokenRequest struct{}
+
+func (req *AvatarGetPolicyTokenRequest) To() *dto.AvatarGetPolicyTokenRequest {
+	return &dto.AvatarGetPolicyTokenRequest{}
+}
+
+type AvatarGetPolicyTokenResponse struct {
+	PolicyToken string `json:"policy_token"`
+}
+
+func NewAvatarGetPolicyTokenResponse(resp *dto.AvatarGetPolicyTokenResponse) *AvatarGetPolicyTokenResponse {
+	if resp == nil {
+		return nil
+	}
+
+	return &AvatarGetPolicyTokenResponse{
+		PolicyToken: resp.PolicyToken,
+	}
+}
+
+type AvatarUpdateRequest struct {
+	TemporaryFileToken string `json:"temporary_file_token"`
+}
+
+func (req *AvatarUpdateRequest) To() *dto.AvatarUpdateRequest {
+	return &dto.AvatarUpdateRequest{
+		TemporaryFileToken: req.TemporaryFileToken,
+	}
+}
+
+type AvatarUpdateResponse struct {
+	AvatarURL string `json:"avatar_url"`
+}
+
+func NewAvatarUpdateResponse(resp *dto.AvatarUpdateResponse) *AvatarUpdateResponse {
+	if resp == nil {
+		return nil
+	}
+
+	return &AvatarUpdateResponse{
+		AvatarURL: resp.AvatarURL,
+	}
+}

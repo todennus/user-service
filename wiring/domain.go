@@ -2,6 +2,7 @@ package wiring
 
 import (
 	"context"
+	"time"
 
 	"github.com/todennus/shared/config"
 	"github.com/todennus/user-service/domain"
@@ -10,6 +11,7 @@ import (
 
 type Domains struct {
 	abstraction.UserDomain
+	abstraction.AvatarDomain
 }
 
 func InitializeDomains(ctx context.Context, config *config.Config) (*Domains, error) {
@@ -20,6 +22,12 @@ func InitializeDomains(ctx context.Context, config *config.Config) (*Domains, er
 	if err != nil {
 		return nil, err
 	}
+
+	domains.AvatarDomain = domain.NewAvatarDomain(
+		config.Variable.User.AvatarAllowedTypes,
+		config.Variable.User.AvatarMaxSize,
+		time.Duration(config.Variable.User.AvatarPolicyTokenExpiration)*time.Second,
+	)
 
 	return domains, nil
 }

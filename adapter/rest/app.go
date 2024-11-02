@@ -22,7 +22,7 @@ func App(
 	r.Use(middleware.Authentication(config.TokenEngine))
 	r.Use(middleware.WithSession(config.SessionManager))
 
-	r.Route("/users", NewUserAdapter(usecases.UserUsecase).Router)
+	r.Route("/users", NewUserAdapter(usecases.UserUsecase, usecases.AvatarUsecase).Router)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNotFound) })
 

@@ -13,20 +13,24 @@ import (
 	"github.com/todennus/x/xhttp"
 )
 
-type UserRESTAdapter struct {
-	userUsecase abstraction.UserUsecase
+type UserAdapter struct {
+	userUsecase   abstraction.UserUsecase
+	avatarUsecase abstraction.AvatarUsecase
 }
 
-func NewUserAdapter(userUsecase abstraction.UserUsecase) *UserRESTAdapter {
-	return &UserRESTAdapter{userUsecase: userUsecase}
+func NewUserAdapter(userUsecase abstraction.UserUsecase, avatarUsecase abstraction.AvatarUsecase) *UserAdapter {
+	return &UserAdapter{userUsecase: userUsecase, avatarUsecase: avatarUsecase}
 }
 
-func (a *UserRESTAdapter) Router(r chi.Router) {
+func (a *UserAdapter) Router(r chi.Router) {
 	r.Post("/", middleware.RequireAuthentication(a.Register()))
 	r.Post("/validate", middleware.RequireAuthentication(a.Validate()))
 
 	r.Get("/{user_id}", middleware.RequireAuthentication(a.GetByID()))
 	r.Get("/username/{username}", middleware.RequireAuthentication(a.GetByUsername()))
+
+	r.Get("/avatar/policy_token", middleware.RequireAuthentication(a.GetAvatarPolicyToken()))
+	r.Post("/avatar", middleware.RequireAuthentication(a.UpdateAvatar()))
 }
 
 // @Summary Register a new user
@@ -42,7 +46,7 @@ func (a *UserRESTAdapter) Router(r chi.Router) {
 // @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
 // @Failure 409 {object} response.SwaggerDuplicatedErrorResponse "Duplicated"
 // @Router /users [post]
-func (a *UserRESTAdapter) Register() func(w http.ResponseWriter, r *http.Request) {
+func (a *UserAdapter) Register() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -71,7 +75,7 @@ func (a *UserRESTAdapter) Register() func(w http.ResponseWriter, r *http.Request
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
 // @Failure 404 {object} response.SwaggerNotFoundErrorResponse "Not found"
 // @Router /users/{user_id} [get]
-func (a *UserRESTAdapter) GetByID() http.HandlerFunc {
+func (a *UserAdapter) GetByID() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -104,7 +108,7 @@ func (a *UserRESTAdapter) GetByID() http.HandlerFunc {
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
 // @Failure 404 {object} response.SwaggerNotFoundErrorResponse "Not found"
 // @Router /users/username/{username} [get]
-func (a *UserRESTAdapter) GetByUsername() http.HandlerFunc {
+func (a *UserAdapter) GetByUsername() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -134,7 +138,7 @@ func (a *UserRESTAdapter) GetByUsername() http.HandlerFunc {
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
 // @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
 // @Router /users/validate [post]
-func (a *UserRESTAdapter) Validate() http.HandlerFunc {
+func (a *UserAdapter) Validate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -147,6 +151,62 @@ func (a *UserRESTAdapter) Validate() http.HandlerFunc {
 		resp, err := a.userUsecase.ValidateCredentials(ctx, req.To())
 		response.NewRESTResponseHandler(ctx, dto.NewUserValidateResponse(resp), err).
 			Map(http.StatusBadRequest, errordef.ErrRequestInvalid, errordef.ErrCredentialsInvalid).
+			Map(http.StatusForbidden, errordef.ErrForbidden).
+			WriteHTTPResponse(ctx, w)
+	}
+}
+
+// @Summary Get the updating avatar policy_token.
+// @Description Get the updating avatar policy_token used for validating the avatar image metadata. Please refer POST /files/policy/validate for the next step. <br>
+// @Description Require `todennus/update:user.avatar` scope.
+// @Tags User
+// @Security OAuth2Application[todennus/update:user.avatar]
+// @Produce json
+// @Success 200 {object} response.SwaggerSuccessResponse[dto.AvatarGetPolicyTokenResponse] "Get token successfully"
+// @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
+// @Router /users/avatar/policy_token [get]
+func (a *UserAdapter) GetAvatarPolicyToken() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		req, err := xhttp.ParseHTTPRequest[dto.AvatarGetPolicyTokenRequest](r)
+		if err != nil {
+			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
+			return
+		}
+
+		resp, err := a.avatarUsecase.GetPolicyToken(ctx, req.To())
+		response.NewRESTResponseHandler(ctx, dto.NewAvatarGetPolicyTokenResponse(resp), err).
+			Map(http.StatusForbidden, errordef.ErrForbidden).
+			WriteHTTPResponse(ctx, w)
+	}
+}
+
+// @Summary Updating avatar.
+// @Description Use a temporary_file_token to update user avatar. <br>
+// @Description Require `todennus/update:user.avatar` scope.
+// @Tags User
+// @Security OAuth2Application[todennus/update:user.avatar]
+// @Accept json
+// @Produce json
+// @Param body body dto.AvatarUpdateRequest true "avatar update request"
+// @Success 200 {object} response.SwaggerSuccessResponse[dto.AvatarUpdateResponse] "Validate successfully"
+// @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
+// @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
+// @Router /users/avatar [post]
+func (a *UserAdapter) UpdateAvatar() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		req, err := xhttp.ParseHTTPRequest[dto.AvatarUpdateRequest](r)
+		if err != nil {
+			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
+			return
+		}
+
+		resp, err := a.avatarUsecase.Update(ctx, req.To())
+		response.NewRESTResponseHandler(ctx, dto.NewAvatarUpdateResponse(resp), err).
+			Map(http.StatusBadRequest, errordef.ErrRequestInvalid).
 			Map(http.StatusForbidden, errordef.ErrForbidden).
 			WriteHTTPResponse(ctx, w)
 	}
