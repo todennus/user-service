@@ -29,8 +29,8 @@ func (a *UserAdapter) Router(r chi.Router) {
 	r.Get("/{user_id}", middleware.RequireAuthentication(a.GetByID()))
 	r.Get("/username/{username}", middleware.RequireAuthentication(a.GetByUsername()))
 
-	r.Get("/avatar/policy_token", middleware.RequireAuthentication(a.GetAvatarPolicyToken()))
-	r.Post("/avatar", middleware.RequireAuthentication(a.UpdateAvatar()))
+	r.Get("/{user_id}/avatar/upload_token", middleware.RequireAuthentication(a.GetAvatarUploadToken()))
+	r.Put("/{user_id}/avatar", middleware.RequireAuthentication(a.UpdateAvatar()))
 }
 
 // @Summary Register a new user
@@ -156,44 +156,52 @@ func (a *UserAdapter) Validate() http.HandlerFunc {
 	}
 }
 
-// @Summary Get the updating avatar policy_token.
-// @Description Get the updating avatar policy_token used for validating the avatar image metadata. Please refer POST /files/policy/validate for the next step. <br>
+// @Summary Get an avatar upload_token.
+// @Description Get the upload_token used for updating the avatar image. <br>
 // @Description Require `todennus/update:user.avatar` scope.
 // @Tags User
 // @Security OAuth2Application[todennus/update:user.avatar]
 // @Produce json
-// @Success 200 {object} response.SwaggerSuccessResponse[dto.AvatarGetPolicyTokenResponse] "Get token successfully"
+// @Param user_id path string true "user_id"
+// @Success 200 {object} response.SwaggerSuccessResponse[dto.AvatarGetUploadTokenResponse] "Get token successfully"
 // @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
-// @Router /users/avatar/policy_token [get]
-func (a *UserAdapter) GetAvatarPolicyToken() http.HandlerFunc {
+// @Router /users/{user_id}/avatar/upload_token [get]
+func (a *UserAdapter) GetAvatarUploadToken() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		req, err := xhttp.ParseHTTPRequest[dto.AvatarGetPolicyTokenRequest](r)
+		req, err := xhttp.ParseHTTPRequest[dto.AvatarGetUploadTokenRequest](r)
 		if err != nil {
 			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
 			return
 		}
 
-		resp, err := a.avatarUsecase.GetPolicyToken(ctx, req.To())
-		response.NewRESTResponseHandler(ctx, dto.NewAvatarGetPolicyTokenResponse(resp), err).
+		ucreq, err := req.To(xcontext.RequestSubjectID(ctx))
+		if err != nil {
+			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
+			return
+		}
+
+		resp, err := a.avatarUsecase.GetUploadToken(ctx, ucreq)
+		response.NewRESTResponseHandler(ctx, dto.NewAvatarGetUploadTokenResponse(resp), err).
 			Map(http.StatusForbidden, errordef.ErrForbidden).
 			WriteHTTPResponse(ctx, w)
 	}
 }
 
-// @Summary Updating avatar.
+// @Summary Update avatar.
 // @Description Use a temporary_file_token to update user avatar. <br>
 // @Description Require `todennus/update:user.avatar` scope.
 // @Tags User
 // @Security OAuth2Application[todennus/update:user.avatar]
 // @Accept json
 // @Produce json
-// @Param body body dto.AvatarUpdateRequest true "avatar update request"
-// @Success 200 {object} response.SwaggerSuccessResponse[dto.AvatarUpdateResponse] "Validate successfully"
+// @Param user_id path string true "user_id"
+// @Param body body dto.AvatarUpdateRequest true "Avatar update request"
+// @Success 200 {object} response.SwaggerSuccessResponse[dto.AvatarUpdateResponse] "Update successfully"
 // @Failure 400 {object} response.SwaggerBadRequestErrorResponse "Bad request"
 // @Failure 403 {object} response.SwaggerForbiddenErrorResponse "Forbidden"
-// @Router /users/avatar [post]
+// @Router /users/{user_id}/avatar [put]
 func (a *UserAdapter) UpdateAvatar() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -204,7 +212,13 @@ func (a *UserAdapter) UpdateAvatar() http.HandlerFunc {
 			return
 		}
 
-		resp, err := a.avatarUsecase.Update(ctx, req.To())
+		ucreq, err := req.To(xcontext.RequestSubjectID(ctx))
+		if err != nil {
+			response.RESTWriteAndLogInvalidRequestError(ctx, w, err)
+			return
+		}
+
+		resp, err := a.avatarUsecase.Update(ctx, ucreq)
 		response.NewRESTResponseHandler(ctx, dto.NewAvatarUpdateResponse(resp), err).
 			Map(http.StatusBadRequest, errordef.ErrRequestInvalid).
 			Map(http.StatusForbidden, errordef.ErrForbidden).

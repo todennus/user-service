@@ -2,7 +2,6 @@ package wiring
 
 import (
 	"context"
-	"time"
 
 	"github.com/todennus/shared/config"
 	"github.com/todennus/user-service/domain"
@@ -26,7 +25,6 @@ func InitializeDomains(ctx context.Context, config *config.Config) (*Domains, er
 	domains.AvatarDomain = domain.NewAvatarDomain(
 		config.Variable.User.AvatarAllowedTypes,
 		config.Variable.User.AvatarMaxSize,
-		time.Duration(config.Variable.User.AvatarPolicyTokenExpiration)*time.Second,
 	)
 
 	return domains, nil

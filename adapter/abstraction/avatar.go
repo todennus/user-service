@@ -7,7 +7,6 @@ import (
 )
 
 type AvatarUsecase interface {
-	GetPolicyToken(context.Context, *dto.AvatarGetPolicyTokenRequest) (*dto.AvatarGetPolicyTokenResponse, error)
-	ValidatePolicyToken(context.Context, *dto.AvatarValidatePolicyTokenRequest) (*dto.AvatarValidatePolicyTokenResponse, error)
+	GetUploadToken(context.Context, *dto.AvatarGetUploadTokenRequest) (*dto.AvatarGetUploadTokenResponse, error)
 	Update(context.Context, *dto.AvatarUpdateRequest) (*dto.AvatarUpdateResponse, error)
 }

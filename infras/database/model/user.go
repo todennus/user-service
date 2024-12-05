@@ -10,13 +10,13 @@ import (
 )
 
 type UserModel struct {
-	ID          int64     `gorm:"id"`
-	DisplayName string    `gorm:"display_name"`
-	Username    string    `gorm:"username"`
-	HashedPass  string    `gorm:"hashed_pass"`
-	Role        string    `gorm:"role"`
-	AvatarURL   string    `gorm:"avatar_url"`
-	UpdatedAt   time.Time `gorm:"updated_at"`
+	ID          int64     `gorm:"column:id"`
+	DisplayName string    `gorm:"column:display_name"`
+	Username    string    `gorm:"column:username"`
+	HashedPass  string    `gorm:"column:hashed_pass"`
+	Role        string    `gorm:"column:role"`
+	Avatar      int64     `gorm:"column:avatar"`
+	UpdatedAt   time.Time `gorm:"column:updated_at"`
 }
 
 func (UserModel) TableName() string {
@@ -29,7 +29,7 @@ func NewUser(d *domain.User) *UserModel {
 		DisplayName: d.DisplayName,
 		Username:    d.Username,
 		HashedPass:  d.HashedPass,
-		AvatarURL:   d.AvatarURL,
+		Avatar:      d.Avatar.Int64(),
 		Role:        d.Role.String(),
 		UpdatedAt:   d.UpdatedAt,
 	}
@@ -42,7 +42,7 @@ func (u UserModel) To() (*domain.User, error) {
 		Username:    u.Username,
 		HashedPass:  u.HashedPass,
 		Role:        enum.FromStr[enumdef.UserRole](u.Role),
-		AvatarURL:   u.AvatarURL,
+		Avatar:      snowflake.ParseInt64(u.Avatar),
 		UpdatedAt:   u.UpdatedAt,
 	}, nil
 }

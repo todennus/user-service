@@ -1,48 +1,27 @@
 package dto
 
-import (
-	"github.com/todennus/user-service/domain"
-	"github.com/xybor-x/snowflake"
-)
+import "github.com/xybor-x/snowflake"
 
-type AvatarGetPolicyTokenRequest struct{}
-
-type AvatarGetPolicyTokenResponse struct {
-	PolicyToken string
+type AvatarGetUploadTokenRequest struct {
+	UserID snowflake.ID
 }
 
-func NewAvatarGetPolicyTokenResponse(policyToken string) *AvatarGetPolicyTokenResponse {
-	return &AvatarGetPolicyTokenResponse{PolicyToken: policyToken}
+type AvatarGetUploadTokenResponse struct {
+	UploadToken string
 }
 
-type AvatarValidatePolicyTokenRequest struct {
-	PolicyToken string
-}
-
-type AvatarValidatePolicyTokenResponse struct {
-	UserID       snowflake.ID
-	AllowedTypes []string
-	MaxSize      int
-}
-
-func NewAvatarValidatePolicyTokenResponse(policy *domain.AvatarPolicySession) *AvatarValidatePolicyTokenResponse {
-	return &AvatarValidatePolicyTokenResponse{
-		UserID:       policy.UserID,
-		AllowedTypes: policy.AllowedTypes,
-		MaxSize:      policy.MaxSize,
-	}
+func NewAvatarGetUploadTokenResponse(uploadToken string) *AvatarGetUploadTokenResponse {
+	return &AvatarGetUploadTokenResponse{UploadToken: uploadToken}
 }
 
 type AvatarUpdateRequest struct {
-	TemporaryFileToken string
+	UserID    snowflake.ID
+	FileToken string
 }
 
 type AvatarUpdateResponse struct {
-	AvatarURL string
 }
 
-func NewAvatarUpdateResponse(avatarURL string) *AvatarUpdateResponse {
-	return &AvatarUpdateResponse{
-		AvatarURL: avatarURL,
-	}
+func NewAvatarUpdateResponse() *AvatarUpdateResponse {
+	return &AvatarUpdateResponse{}
 }

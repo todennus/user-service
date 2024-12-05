@@ -51,7 +51,9 @@ func InitializeInfras(ctx context.Context, config *config.Config) (*Infras, erro
 		ClientID:     config.Secret.Service.ClientID,
 		ClientSecret: config.Secret.Service.ClientSecret,
 		Scopes: []string{
-			scopedef.AdminCommandTemporaryFile.Scope(),
+			scopedef.AdminRegisterFilePolicy.Scope(),
+			scopedef.AdminCreatePresignedFile.Scope(),
+			scopedef.AdminChangeRefcountFileOwnership.Scope(),
 		},
 		AuthStyle: oauth2.AuthStyleInParams,
 	}).TokenSource)
