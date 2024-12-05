@@ -2,12 +2,13 @@ package grpc
 
 import (
 	"context"
+	"time"
 
 	"github.com/todennus/proto/gen/service"
 	"github.com/todennus/proto/gen/service/dto"
 	"github.com/todennus/shared/authentication"
-	"github.com/todennus/shared/enumdef"
 	"github.com/todennus/shared/errordef"
+	"github.com/todennus/user-service/domain"
 	"github.com/xybor-x/snowflake"
 	"google.golang.org/grpc"
 )
@@ -24,43 +25,50 @@ func NewFileRepository(client *grpc.ClientConn, auth *authentication.GrpcAuthori
 	}
 }
 
-func (repo *FileRepository) ValidateTemporaryFile(ctx context.Context, temporaryFileToken string) (snowflake.ID, error) {
-	req := &dto.FileValidateTemporaryFileRequest{TemporaryFileToken: temporaryFileToken}
-	resp, err := repo.fileClient.ValidateTemporaryFile(repo.auth.Context(ctx), req)
-	if err != nil {
-		return 0, errordef.ConvertGRPCError(err)
+func (repo *FileRepository) RegisterUpload(ctx context.Context, policy *domain.AvatarPolicy) (string, error) {
+	req := &dto.FileRegisterUploadRequest{
+		UserId:       policy.UserID.Int64(),
+		AllowedTypes: policy.AllowedTypes,
+		MaxSize:      policy.MaxSize,
 	}
-
-	userID, err := snowflake.ParseString(resp.PolicyMetadata)
-	if err != nil {
-		return 0, err
-	}
-
-	return userID, nil
-}
-
-func (repo *FileRepository) SaveToPersistent(ctx context.Context, temporaryFileToken string) (string, error) {
-	req := &dto.FileCommandTemporaryFileRequest{
-		Command:            enumdef.TemporaryFileCommandToGRPC(enumdef.TemporaryFileCommandSaveAsImage),
-		TemporaryFileToken: temporaryFileToken,
-		PolicySource:       enumdef.PolicySourceUserAvatar,
-	}
-	resp, err := repo.fileClient.CommandTemporaryFile(repo.auth.Context(ctx), req)
+	resp, err := repo.fileClient.RegisterUpload(repo.auth.Context(ctx), req)
 	if err != nil {
 		return "", errordef.ConvertGRPCError(err)
 	}
 
-	return resp.PersistentUrl, nil
+	return resp.UploadToken, nil
 }
 
-func (repo *FileRepository) DeleteTemporary(ctx context.Context, temporaryFileToken string) error {
-	req := &dto.FileCommandTemporaryFileRequest{
-		Command:            enumdef.TemporaryFileCommandToGRPC(enumdef.TemporaryFileCommandDelete),
-		TemporaryFileToken: temporaryFileToken,
-		PolicySource:       enumdef.PolicySourceUserAvatar,
+func (repo *FileRepository) CreatePresignedURL(ctx context.Context, ownershipID snowflake.ID, expiration time.Duration) (string, error) {
+	req := &dto.FileCreatePresignedURLRequest{
+		OwnershipId: ownershipID.Int64(),
+		Expiration:  int64(expiration / time.Second),
 	}
-	_, err := repo.fileClient.CommandTemporaryFile(repo.auth.Context(ctx), req)
+	resp, err := repo.fileClient.CreatePresignedURL(repo.auth.Context(ctx), req)
 	if err != nil {
+		return "", errordef.ConvertGRPCError(err)
+	}
+
+	return resp.PresignedUrl, nil
+}
+
+func (repo *FileRepository) ChangeRefcount(ctx context.Context, inc, dec []snowflake.ID) error {
+	incOwnershipID := []int64{}
+	for i := range inc {
+		incOwnershipID = append(incOwnershipID, inc[i].Int64())
+	}
+
+	decOwnershipID := []int64{}
+	for i := range dec {
+		decOwnershipID = append(decOwnershipID, dec[i].Int64())
+	}
+
+	req := &dto.FileChangeRefcountRequest{
+		IncOwnershipId: incOwnershipID,
+		DecOwnershipId: decOwnershipID,
+	}
+
+	if _, err := repo.fileClient.ChangeRefcount(repo.auth.Context(ctx), req); err != nil {
 		return errordef.ConvertGRPCError(err)
 	}
 

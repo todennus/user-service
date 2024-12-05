@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/todennus/shared/enumdef"
 	"github.com/todennus/shared/errordef"
@@ -18,20 +19,27 @@ type UserUsecase struct {
 	adminLocker       lock.Locker
 	shouldCreateAdmin bool
 
+	avatarPresignedURLExpiration time.Duration
+
 	userDomain abstraction.UserDomain
 	userRepo   abstraction.UserRepository
+	fileRepo   abstraction.FileRepository
 }
 
 func NewUserUsecase(
 	locker lock.Locker,
-	userRepo abstraction.UserRepository,
+	avatarPresignedURLExpiration time.Duration,
 	userDomain abstraction.UserDomain,
+	userRepo abstraction.UserRepository,
+	fileRepo abstraction.FileRepository,
 ) *UserUsecase {
 	return &UserUsecase{
-		adminLocker:       locker,
-		shouldCreateAdmin: true,
-		userRepo:          userRepo,
-		userDomain:        userDomain,
+		adminLocker:                  locker,
+		avatarPresignedURLExpiration: avatarPresignedURLExpiration,
+		shouldCreateAdmin:            true,
+		userRepo:                     userRepo,
+		userDomain:                   userDomain,
+		fileRepo:                     fileRepo,
 	}
 }
 
@@ -114,7 +122,15 @@ func (usecase *UserUsecase) GetByID(
 		return nil, errordef.ErrServer.Hide(err, "failed-to-get-user", "uid", req.UserID)
 	}
 
-	return dto.NewUserGetByIDResponse(ctx, user), nil
+	var avatarURL string
+	if user.Avatar != 0 {
+		avatarURL, err = usecase.fileRepo.CreatePresignedURL(ctx, user.Avatar, usecase.avatarPresignedURLExpiration)
+		if err != nil {
+			return nil, errordef.ErrServer.Hide(err, "failed-to-get-presigned-url", "avatar", user.Avatar)
+		}
+	}
+
+	return dto.NewUserGetByIDResponse(ctx, user, avatarURL), nil
 }
 
 func (usecase *UserUsecase) GetByUsername(
@@ -134,7 +150,15 @@ func (usecase *UserUsecase) GetByUsername(
 		return nil, errordef.ErrServer.Hide(err, "failed-to-get-user", "username", req.Username)
 	}
 
-	return dto.NewUserGetByUsernameResponse(ctx, user), nil
+	var avatarURL string
+	if user.Avatar != 0 {
+		avatarURL, err = usecase.fileRepo.CreatePresignedURL(ctx, user.Avatar, usecase.avatarPresignedURLExpiration)
+		if err != nil {
+			return nil, errordef.ErrServer.Hide(err, "failed-to-get-presigned-url", "avatar", user.Avatar)
+		}
+	}
+
+	return dto.NewUserGetByUsernameResponse(ctx, user, avatarURL), nil
 }
 
 func (usecase *UserUsecase) ValidateCredentials(

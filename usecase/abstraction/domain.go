@@ -12,5 +12,5 @@ type UserDomain interface {
 }
 
 type AvatarDomain interface {
-	GetPolicy(userID snowflake.ID) *domain.AvatarPolicySession
+	GetPolicy(userID snowflake.ID) *domain.AvatarPolicy
 }

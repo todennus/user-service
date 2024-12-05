@@ -151,38 +151,53 @@ func NewUserValidateResponse(resp *dto.UserValidateCredentialsResponse) *UserVal
 	}
 }
 
-type AvatarGetPolicyTokenRequest struct{}
-
-func (req *AvatarGetPolicyTokenRequest) To() *dto.AvatarGetPolicyTokenRequest {
-	return &dto.AvatarGetPolicyTokenRequest{}
+type AvatarGetUploadTokenRequest struct {
+	UserID string `json:"-" param:"user_id"`
 }
 
-type AvatarGetPolicyTokenResponse struct {
-	PolicyToken string `json:"policy_token"`
+func (req *AvatarGetUploadTokenRequest) To(meID snowflake.ID) (*dto.AvatarGetUploadTokenRequest, error) {
+	userID, err := ParseUserID(meID, req.UserID)
+	if err != nil {
+		return nil, xerror.Enrich(errordef.ErrRequestInvalid, "invalid user id")
+	}
+
+	return &dto.AvatarGetUploadTokenRequest{
+		UserID: userID,
+	}, nil
 }
 
-func NewAvatarGetPolicyTokenResponse(resp *dto.AvatarGetPolicyTokenResponse) *AvatarGetPolicyTokenResponse {
+type AvatarGetUploadTokenResponse struct {
+	UploadToken string `json:"upload_token"`
+}
+
+func NewAvatarGetUploadTokenResponse(resp *dto.AvatarGetUploadTokenResponse) *AvatarGetUploadTokenResponse {
 	if resp == nil {
 		return nil
 	}
 
-	return &AvatarGetPolicyTokenResponse{
-		PolicyToken: resp.PolicyToken,
+	return &AvatarGetUploadTokenResponse{
+		UploadToken: resp.UploadToken,
 	}
 }
 
 type AvatarUpdateRequest struct {
-	TemporaryFileToken string `json:"temporary_file_token"`
+	UserID    string `json:"-" param:"user_id"`
+	FileToken string `json:"file_token"`
 }
 
-func (req *AvatarUpdateRequest) To() *dto.AvatarUpdateRequest {
-	return &dto.AvatarUpdateRequest{
-		TemporaryFileToken: req.TemporaryFileToken,
+func (req *AvatarUpdateRequest) To(meID snowflake.ID) (*dto.AvatarUpdateRequest, error) {
+	userID, err := ParseUserID(meID, req.UserID)
+	if err != nil {
+		return nil, xerror.Enrich(errordef.ErrRequestInvalid, "invalid user id")
 	}
+
+	return &dto.AvatarUpdateRequest{
+		UserID:    userID,
+		FileToken: req.FileToken,
+	}, nil
 }
 
 type AvatarUpdateResponse struct {
-	AvatarURL string `json:"avatar_url"`
 }
 
 func NewAvatarUpdateResponse(resp *dto.AvatarUpdateResponse) *AvatarUpdateResponse {
@@ -190,7 +205,5 @@ func NewAvatarUpdateResponse(resp *dto.AvatarUpdateResponse) *AvatarUpdateRespon
 		return nil
 	}
 
-	return &AvatarUpdateResponse{
-		AvatarURL: resp.AvatarURL,
-	}
+	return &AvatarUpdateResponse{}
 }

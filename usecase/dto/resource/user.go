@@ -19,8 +19,8 @@ type User struct {
 	AvatarURL   *string
 }
 
-func NewUserWithFilter(ctx context.Context, user *domain.User) *User {
-	usecaseUser := NewUserWithoutFilter(user)
+func NewUserWithFilter(ctx context.Context, user *domain.User, avatarURL string) *User {
+	usecaseUser := NewUser(user, avatarURL)
 
 	scopedef.Eval(xcontext.Scope(ctx)).
 		RequireAdmin(scopedef.AdminReadUserProfile).
@@ -39,13 +39,16 @@ func NewUserWithFilter(ctx context.Context, user *domain.User) *User {
 	return usecaseUser
 }
 
-func NewUserWithoutFilter(user *domain.User) *User {
+func NewUser(user *domain.User, avatarURL string) *User {
 	usecaseUser := &User{
 		ID:          user.ID,
 		Username:    &user.Username,
 		DisplayName: &user.DisplayName,
 		Role:        &user.Role,
-		AvatarURL:   &user.AvatarURL,
+	}
+
+	if avatarURL != "" {
+		usecaseUser.AvatarURL = &avatarURL
 	}
 
 	return usecaseUser

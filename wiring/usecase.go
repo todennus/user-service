@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/todennus/shared/config"
 	"github.com/todennus/user-service/adapter/abstraction"
 	"github.com/todennus/user-service/usecase"
 	"github.com/todennus/x/lock"
@@ -16,6 +17,7 @@ type Usecases struct {
 
 func InitializeUsecases(
 	ctx context.Context,
+	config *config.Config,
 	infras *Infras,
 	domains *Domains,
 	repositories *Repositories,
@@ -24,13 +26,15 @@ func InitializeUsecases(
 
 	uc.UserUsecase = usecase.NewUserUsecase(
 		lock.NewRedisLock(infras.Redis, "user-lock", 10*time.Second),
-		repositories.UserRepository,
+		time.Duration(config.Variable.User.AvatarPresignedURLExpiration)*time.Second,
 		domains.UserDomain,
+		repositories.UserRepository,
+		repositories.FileRepository,
 	)
 
 	uc.AvatarUsecase = usecase.NewAvatarUsecase(
+		config.TokenEngine,
 		domains.AvatarDomain,
-		repositories.AvatarPolicySessionRepository,
 		repositories.FileRepository,
 		repositories.UserRepository,
 	)

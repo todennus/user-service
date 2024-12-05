@@ -54,19 +54,3 @@ func (s *UserServer) Validate(ctx context.Context, req *pbdto.UserValidateReques
 		Map(codes.NotFound, errordef.ErrNotFound).
 		Finalize(ctx)
 }
-
-func (s *UserServer) ValidateAvatarPolicyToken(
-	ctx context.Context,
-	req *pbdto.UserValidateAvatarPolicyTokenRequest,
-) (*pbdto.UserValidateAvatarPolicyTokenResponse, error) {
-	if err := interceptor.RequireAuthentication(ctx); err != nil {
-		return nil, err
-	}
-
-	ucreq := conversion.NewUsecaseAvatarValidatePolicyTokenRequest(req)
-	resp, err := s.avatarUsecase.ValidatePolicyToken(ctx, ucreq)
-
-	return response.NewGRPCResponseHandler(ctx, conversion.NewPbUserValidateAvatarPolicyTokenResponse(resp), err).
-		Map(codes.PermissionDenied, errordef.ErrForbidden).
-		Finalize(ctx)
-}

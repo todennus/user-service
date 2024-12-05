@@ -50,25 +50,3 @@ func NewPbUserGetByIDResponse(resp *ucdto.UserGetByIDResponse) *pbdto.UserGetByI
 		User: NewPbUser(resp.User),
 	}
 }
-
-func NewUsecaseAvatarValidatePolicyTokenRequest(
-	req *pbdto.UserValidateAvatarPolicyTokenRequest,
-) *ucdto.AvatarValidatePolicyTokenRequest {
-	return &ucdto.AvatarValidatePolicyTokenRequest{
-		PolicyToken: req.GetPolicyToken(),
-	}
-}
-
-func NewPbUserValidateAvatarPolicyTokenResponse(
-	resp *ucdto.AvatarValidatePolicyTokenResponse,
-) *pbdto.UserValidateAvatarPolicyTokenResponse {
-	if resp == nil {
-		return nil
-	}
-
-	return &pbdto.UserValidateAvatarPolicyTokenResponse{
-		UserId:       resp.UserID.Int64(),
-		AllowedTypes: resp.AllowedTypes,
-		MaxSize:      int32(resp.MaxSize),
-	}
-}

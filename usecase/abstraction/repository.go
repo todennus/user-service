@@ -2,6 +2,7 @@ package abstraction
 
 import (
 	"context"
+	"time"
 
 	"github.com/todennus/shared/enumdef"
 	"github.com/todennus/user-service/domain"
@@ -15,19 +16,14 @@ type UserRepository interface {
 	GetByID(ctx context.Context, userID snowflake.ID) (*domain.User, error)
 	GetByUsername(ctx context.Context, username string) (*domain.User, error)
 
-	UpdateAvatarByID(ctx context.Context, userID snowflake.ID, avatarURL string) error
+	GetAvatarByID(ctx context.Context, userID snowflake.ID) (snowflake.ID, error)
+	UpdateAvatarByID(ctx context.Context, userID, ownershipID snowflake.ID) error
 
 	CountByRole(ctx context.Context, role enum.Enum[enumdef.UserRole]) (int64, error)
 }
 
-type AvatarPolicySessionRepository interface {
-	Store(ctx context.Context, policy *domain.AvatarPolicySession) error
-	Load(ctx context.Context, policyToken string) (*domain.AvatarPolicySession, error)
-	Delete(ctx context.Context, policyToken string) error
-}
-
 type FileRepository interface {
-	ValidateTemporaryFile(ctx context.Context, temporaryFileToken string) (snowflake.ID, error)
-	SaveToPersistent(ctx context.Context, temporaryFileToken string) (string, error)
-	DeleteTemporary(ctx context.Context, temporaryFileToken string) error
+	RegisterUpload(ctx context.Context, policy *domain.AvatarPolicy) (string, error)
+	CreatePresignedURL(ctx context.Context, ownershipID snowflake.ID, expiration time.Duration) (string, error)
+	ChangeRefcount(ctx context.Context, incOwnershipID, decOwnershipID []snowflake.ID) error
 }

@@ -27,7 +27,7 @@ type User struct {
 	Username    string
 	HashedPass  string
 	Role        enum.Enum[enumdef.UserRole]
-	AvatarURL   string
+	Avatar      snowflake.ID
 	UpdatedAt   time.Time
 }
 

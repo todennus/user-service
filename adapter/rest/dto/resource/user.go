@@ -10,6 +10,7 @@ type User struct {
 	Username    *string `json:"username,omitempty" example:"huykingsofm"`
 	DisplayName *string `json:"display_name,omitempty" example:"Huy Le Ngoc"`
 	Role        *string `json:"role,omitempty" example:"admin"`
+	AvatarURL   *string `json:"avatar_url,omitempty" example:"http://files.todennus.com/123"`
 }
 
 func NewUser(user *resource.User) *User {
@@ -18,5 +19,6 @@ func NewUser(user *resource.User) *User {
 		Username:    user.Username,
 		DisplayName: user.DisplayName,
 		Role:        conversion.MakeEnumPointerString(user.Role),
+		AvatarURL:   user.AvatarURL,
 	}
 }
