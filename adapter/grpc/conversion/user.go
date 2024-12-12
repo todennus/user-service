@@ -12,9 +12,9 @@ import (
 func NewPbUser(user *ucresource.User) *pbresource.User {
 	return &pbresource.User{
 		Id:          user.ID.Int64(),
-		Username:    conversion.ConvertPointer(user.Username),
-		DisplayName: conversion.ConvertPointer(user.DisplayName),
-		Role:        conversion.ConvertPointer(user.Role).String(),
+		Username:    conversion.ConvertFromPointer(user.Username),
+		DisplayName: conversion.ConvertFromPointer(user.DisplayName),
+		Role:        conversion.ConvertFromPointer(user.Role),
 	}
 }
 

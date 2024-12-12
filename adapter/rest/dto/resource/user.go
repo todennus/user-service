@@ -2,7 +2,6 @@ package resource
 
 import (
 	"github.com/todennus/user-service/usecase/dto/resource"
-	"github.com/todennus/x/conversion"
 )
 
 type User struct {
@@ -18,7 +17,7 @@ func NewUser(user *resource.User) *User {
 		ID:          user.ID.String(),
 		Username:    user.Username,
 		DisplayName: user.DisplayName,
-		Role:        conversion.MakeEnumPointerString(user.Role),
+		Role:        user.Role,
 		AvatarURL:   user.AvatarURL,
 	}
 }

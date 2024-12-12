@@ -8,7 +8,6 @@ import (
 	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/user-service/domain"
 	"github.com/todennus/user-service/infras/database/model"
-	"github.com/todennus/x/enum"
 	"github.com/xybor-x/snowflake"
 	"gorm.io/gorm"
 )
@@ -61,8 +60,11 @@ func (repo *UserRepository) UpdateAvatarByID(ctx context.Context, userID, avatar
 	)
 }
 
-func (repo *UserRepository) CountByRole(ctx context.Context, role enum.Enum[enumdef.UserRole]) (int64, error) {
+func (repo *UserRepository) CountByRole(ctx context.Context, role enumdef.UserRole) (int64, error) {
 	var n int64
-	err := xcontext.DB(ctx, repo.db).Model(&model.UserModel{}).Where("role=?", role.String()).Count(&n).Error
+	err := xcontext.DB(ctx, repo.db).
+		Model(&model.UserModel{}).
+		Where("role=?", role).
+		Count(&n).Error
 	return n, errordef.ConvertGormError(err)
 }

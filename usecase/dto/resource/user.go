@@ -3,11 +3,10 @@ package resource
 import (
 	"context"
 
-	"github.com/todennus/shared/enumdef"
 	"github.com/todennus/shared/scopedef"
 	"github.com/todennus/shared/xcontext"
 	"github.com/todennus/user-service/domain"
-	"github.com/todennus/x/enum"
+	"github.com/todennus/x/conversion"
 	"github.com/xybor-x/snowflake"
 )
 
@@ -15,7 +14,7 @@ type User struct {
 	ID          snowflake.ID
 	Username    *string
 	DisplayName *string
-	Role        *enum.Enum[enumdef.UserRole]
+	Role        *string
 	AvatarURL   *string
 }
 
@@ -44,7 +43,7 @@ func NewUser(user *domain.User, avatarURL string) *User {
 		ID:          user.ID,
 		Username:    &user.Username,
 		DisplayName: &user.DisplayName,
-		Role:        &user.Role,
+		Role:        conversion.ConvertToPointer(user.Role.String()),
 	}
 
 	if avatarURL != "" {
