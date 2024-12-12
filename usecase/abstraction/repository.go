@@ -6,7 +6,6 @@ import (
 
 	"github.com/todennus/shared/enumdef"
 	"github.com/todennus/user-service/domain"
-	"github.com/todennus/x/enum"
 	"github.com/xybor-x/snowflake"
 )
 
@@ -19,7 +18,7 @@ type UserRepository interface {
 	GetAvatarByID(ctx context.Context, userID snowflake.ID) (snowflake.ID, error)
 	UpdateAvatarByID(ctx context.Context, userID, ownershipID snowflake.ID) error
 
-	CountByRole(ctx context.Context, role enum.Enum[enumdef.UserRole]) (int64, error)
+	CountByRole(ctx context.Context, role enumdef.UserRole) (int64, error)
 }
 
 type FileRepository interface {

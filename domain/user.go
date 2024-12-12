@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/todennus/shared/enumdef"
-	"github.com/todennus/x/enum"
 	"github.com/todennus/x/xstring"
 	"github.com/xybor-x/snowflake"
 )
@@ -26,7 +25,7 @@ type User struct {
 	DisplayName string
 	Username    string
 	HashedPass  string
-	Role        enum.Enum[enumdef.UserRole]
+	Role        enumdef.UserRole
 	Avatar      snowflake.ID
 	UpdatedAt   time.Time
 }
